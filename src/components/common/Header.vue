@@ -74,8 +74,10 @@ export default {
   .message .bell {
 
   }
-  .message .user-avator {
-
+  .message .user-avator img{
+    display: inline-block;
+    height: 60%;
+    vertical-align: middle;
   }
   .message .user-menu {
 
