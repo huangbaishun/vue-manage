@@ -129,7 +129,7 @@ export default {
       this.curPage = val;
       this.getData();
     },
-    Edit(index, row) {
+    Edit(index) {
       this.cur_idx = index;
       let cur_item = this.tableData[index];
       this.form = {
@@ -147,7 +147,7 @@ export default {
       this.$message.success('修改成功');
 
     },
-    Delete(index, row) {
+    Delete(index) {
       this.cur_idx = index;
       this.deleteDialog = true;
     },
@@ -171,7 +171,7 @@ export default {
             this.tableData.splice(index, 1);
           }
         }
-      };
+      }
       this.$message.error( `${name}删除成功!`);
       this.selectRow = [];
     }

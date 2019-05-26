@@ -72,7 +72,7 @@ export default {
       this.fullscreen = !this.fullscreen;
     },
     loginout() {
-      let username = localStorage.removeItem('username');
+      localStorage.removeItem('username');
       this.$router.push('/login');
     }
   }
