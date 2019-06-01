@@ -89,7 +89,7 @@ export default {
           {
               icon: 'el-icon-upload',
               index: 'charts',
-              title: 'schart图表'
+              title: 'echart图表'
           },
           {
               icon: 'el-icon-rank',
