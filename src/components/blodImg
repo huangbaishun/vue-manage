@@ -1,0 +1,15 @@
+getFlowPic(params)
+    .then(res => {
+      const qrUrl = window.URL.createObjectURL(res);
+      var img = document.createElement("img");
+      img.src = qrUrl;
+      img.onload = function() {
+        window.URL.revokeObjectURL(qrUrl);
+      };
+      const imgDiv = document.querySelector("#pic");
+      imgDiv.appendChild(img);
+    })
+    .finally(() => {
+      this.isPicLoading = false;
+    });
+});
