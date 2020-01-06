@@ -1,0 +1,208 @@
+<template>
+  <el-button @click="dialogVisible = true" style="min-width:88px;">
+    导入
+    <el-dialog
+      :close-on-click-modal="false"
+      :append-to-body="true"
+      title="导入"
+      :close-on-press-escape="false"
+      @close="hadnleClose"
+      :show-close="!importing"
+      :visible.sync="dialogVisible"
+      width="400px"
+    >
+      <el-upload
+        :limit="1"
+        class="exam-upload"
+        ref="upload"
+        name="excelFile"
+        :auto-upload="false"
+        accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        :action="url"
+        :on-remove="handleRemove"
+        :on-success="handleSuccess"
+        :on-change="handleChange"
+        :on-error="handleError"
+        :file-list="fileList"
+        :http-request="xhr"
+      >
+        <template v-if="fileName">
+          <el-button :disabled="true" icon="el-icon-upload2" size="mini">上传文件</el-button>
+          <span slot="trigger"></span>
+        </template>
+
+        <template v-else slot="trigger">
+          <el-button icon="el-icon-upload2" size="mini">上传文件</el-button>
+        </template>
+        <div slot="tip" class="el-upload__tip">支持扩展名：.xls .xlsx</div>
+      </el-upload>
+      <span slot="footer">
+        <el-button
+          type="primary"
+          @click="handleImport"
+          :disabled="!fileName"
+          :loading="importing"
+         size="mini"
+        >{{importing ? '导入中' : '导入'}}</el-button>
+        <el-button @click="dialogVisible = false" v-if="!importing" size="mini">取 消</el-button>
+      </span>
+    </el-dialog>
+    <model-result v-model="errorDialogVisible" :blob="blob" :name="blobName"></model-result>
+  </el-button>
+</template>
+<script>
+import modelResult from './result'
+import xhr from './xhr.js'
+export default {
+  components:{
+    modelResult
+  },
+  props: {
+    action: String
+  },
+  data: function() {
+    return {
+      loading: true,
+      importing: false,
+      errorDialogVisible:false,
+      dialogVisible: false,
+      fileList: [],
+      fileName: "",
+      blob:null,
+      blobName:'',
+      xhr:xhr
+    };
+  },
+  computed: {
+    url: function() {
+      let action = this.action
+      if (action && action[0] !== "/") action = `/${action}`
+      return action
+    }
+  },
+  methods: {
+    hadnleClose: function() {
+      this.importing = false
+      this.fileName = "";
+      this.$refs.upload.clearFiles();
+    },
+    handleChange: function(file, fileList, ...a) {
+      if (file.status === "ready") {
+        this.fileName = file.name;
+      }
+    },
+    handleRemove: function(file, fileList) {
+      if (fileList.length === 0) {
+        this.fileName = "";
+      }
+    },
+    handleSuccess: function(blob){
+       this.dialogVisible=false;
+       if (blob.type === "application/json") {
+          this.handleJson(blob);
+        } else {
+          let blobName=decodeURIComponent(xhr.xhr.getResponseHeader('content-disposition').split('=')[1]);
+          let errors=blobName.split('_')[2]||'';
+          if(errors.indexOf(0)!==-1){
+            this.$emit("success",response);
+            return this.$message('导入成功！');
+          };
+          this.errorDialogVisible=true;
+          this.blob=blob;
+          this.blobName=blobName;
+        }
+    },
+    handleJson: function(blob) {
+      let reader = new FileReader();
+      let that=this;
+      reader.onload = function() {
+        let response = JSON.parse(reader.result);
+        that.dialogVisible = false;
+        if (response.code!=='0'){
+          that.$message({
+            type: "error",
+            message:response.message,
+            duration: 3000
+          })
+        } else {
+          that.$message({
+            type: "success",
+            message: "导入成功!",
+            duration: 3000
+          });
+          that.$emit("success",response);
+        }
+      };
+      reader.readAsText(blob);
+    },
+    handleError: function(error){
+      this.importing = false;
+      this.fileName = "";
+      this.$message({
+          type: "error",
+          message:`错误:异常错误，请尝试重新登录或刷新浏览器`,
+          duration: 3000
+      });
+    },
+    handleImport: function() {
+      this.importing = true;
+      this.$refs.upload.submit();
+    }
+  }
+};
+</script>
+
+
+<template>
+    <el-dialog :visible.sync="visible" append-to-body>
+        <dl>
+            <dt style="dislpay:none">请求结果</dt>
+            <dd v-for="(item,index) in messages" :key="item+index">{{item}}</dd>
+            <dd>
+                <el-link :href="url" :download="fileName">错误信息详情</el-link>
+            </dd>
+        </dl>
+    </el-dialog>
+</template>
+<script>
+    export default {
+        props:{
+            value:Boolean,
+            blob:null,
+            name:{
+                type:String,
+                default:'empty.txt'
+            }
+        },
+        data:function(){
+            return {
+                href:'javascript:void(0)'
+            }
+        },
+        computed:{
+            visible:{
+                get:function(){
+                    return this.value&&this.messages[1].indexOf('0')===-1
+                },
+                set:function(value){
+                    this.$emit('input',value)
+                }
+            },
+            messages:function(){
+                return this.name.split('_').slice(1);
+            },
+            fileName:function(){
+                let messages=this.name.split('_');
+                return messages[messages.length-1];
+            },
+            url:function(){
+                URL.revokeObjectURL(this.href);
+                if(this.blob) this.href= URL.createObjectURL(this.blob);
+                return this.href;
+            }
+        },
+        beforeDestroy:function(){
+            URL.revokeObjectURL(this.href);
+        }
+    }
+</script>
